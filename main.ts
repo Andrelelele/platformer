@@ -1,5 +1,7 @@
 namespace SpriteKind {
     export const coin = SpriteKind.create()
+    export const duck = SpriteKind.create()
+    export const EnemyBounce = SpriteKind.create()
 }
 scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile1`, function (sprite, location) {
     game.gameOver(false)
@@ -11,6 +13,59 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
         hero.vy = -130
     }
 })
+function BouncingEnemies () {
+    for (let value of tiles.getTilesByType(assets.tile`myTile2`)) {
+        myEnemy = sprites.create(img`
+            . . . . . . . . . . b 5 b . . . 
+            . . . . . . . . . b 5 b . . . . 
+            . . . . . . . . . b c . . . . . 
+            . . . . . . b b b b b b . . . . 
+            . . . . . b b 5 5 5 5 5 b . . . 
+            . . . . b b 5 d 1 f 5 5 d f . . 
+            . . . . b 5 5 1 f f 5 d 4 c . . 
+            . . . . b 5 5 d f b d d 4 4 . . 
+            b d d d b b d 5 5 5 4 4 4 4 4 b 
+            b b d 5 5 5 b 5 5 4 4 4 4 4 b . 
+            b d c 5 5 5 5 d 5 5 5 5 5 b . . 
+            c d d c d 5 5 b 5 5 5 5 5 5 b . 
+            c b d d c c b 5 5 5 5 5 5 5 b . 
+            . c d d d d d d 5 5 5 5 5 d b . 
+            . . c b d d d d d 5 5 5 b b . . 
+            . . . c c c c c c c c b b . . . 
+            `, SpriteKind.Enemy)
+        tiles.placeOnTile(myEnemy, value)
+        tiles.setTileAt(value, assets.tile`transparency16`)
+        if (Math.percentChance(50)) {
+            myEnemy.vx = 50
+        } else {
+            myEnemy.vx = -50
+        }
+        myEnemy.setFlag(SpriteFlag.BounceOnWall, true)
+    }
+    for (let value of tiles.getTilesByType(assets.tile`myTile3`)) {
+        EnemyBounceBlock = sprites.create(img`
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            . . . . 8 8 8 8 8 8 8 8 . . . . 
+            `, SpriteKind.EnemyBounce)
+        tiles.placeOnTile(EnemyBounceBlock, value)
+        tiles.setTileAt(value, assets.tile`transparency16`)
+        EnemyBounceBlock.setFlag(SpriteFlag.Invisible, true)
+    }
+}
 sprites.onOverlap(SpriteKind.Player, SpriteKind.coin, function (sprite, otherSprite) {
     info.changeScoreBy(1)
     sprites.destroy(otherSprite)
@@ -18,7 +73,21 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.coin, function (sprite, otherSpr
 info.onScore(20, function () {
     info.changeLifeBy(1)
 })
-let coin2: Sprite = null
+sprites.onOverlap(SpriteKind.Enemy, SpriteKind.EnemyBounce, function (sprite, otherSprite) {
+    sprite.vx = sprite.vx * -1
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    sprites.destroy(otherSprite)
+    if (hero.y < otherSprite.y) {
+        info.changeScoreBy(1)
+    } else {
+        info.changeLifeBy(-1)
+        pause(1000)
+    }
+})
+let EnemyBounceBlock: Sprite = null
+let myEnemy: Sprite = null
+let myCoin: Sprite = null
 let hero: Sprite = null
 scene.setBackgroundImage(img`
     9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
@@ -143,6 +212,7 @@ scene.setBackgroundImage(img`
     7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777
     `)
 tiles.setCurrentTilemap(tilemap`level1`)
+BouncingEnemies()
 hero = sprites.create(img`
     . . . . . . . . . . . . . . . . 
     . . . . . . f f f f f f . . . . 
@@ -167,8 +237,8 @@ info.setScore(0)
 info.setLife(5)
 hero.ay = 200
 controller.moveSprite(hero, 100, 0)
-for (let value of tiles.getTilesByType(assets.tile`myTile`)) {
-    coin2 = sprites.create(img`
+for (let valueCoin of tiles.getTilesByType(assets.tile`myTile`)) {
+    myCoin = sprites.create(img`
         . . b b b b . . 
         . b 5 5 5 5 b . 
         b 5 d 3 3 d 5 b 
@@ -179,7 +249,7 @@ for (let value of tiles.getTilesByType(assets.tile`myTile`)) {
         . . f f f f . . 
         `, SpriteKind.coin)
     animation.runImageAnimation(
-    coin2,
+    myCoin,
     [img`
         . . b b b b . . 
         . b 5 5 5 5 b . 
@@ -238,9 +308,6 @@ for (let value of tiles.getTilesByType(assets.tile`myTile`)) {
     200,
     true
     )
-    tiles.placeOnTile(coin2, value)
-    tiles.setTileAt(value, assets.tile`transparency16`)
+    tiles.placeOnTile(myCoin, valueCoin)
+    tiles.setTileAt(valueCoin, assets.tile`transparency16`)
 }
-game.onUpdate(function () {
-	
-})
